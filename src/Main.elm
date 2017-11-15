@@ -33,9 +33,10 @@ type Msg
     = NoOp
     | GenerateGrid
     | Roll
-    | InitializeBoard (Int, Int)
+    | InitializeBoard ( Int, Int )
 
 
+generateGrid : Dict Int (Dict Int (Maybe Int))
 generateGrid =
     Dict.empty
         |> Dict.insert 0
@@ -79,19 +80,23 @@ update msg model =
 
         InitializeBoard pair ->
             let
-                (x, y) = pair
+                ( x, y ) =
+                    pair
 
-                grid = generateGrid
+                grid =
+                    generateGrid
 
-                row = Dict.get x grid 
-                    |> Maybe.withDefault (Dict.empty)
+                row =
+                    Dict.get x grid
+                        |> Maybe.withDefault Dict.empty
 
-                newRow = Dict.update y (Maybe.map(\_ -> Just 4))  row
+                newRow =
+                    Dict.update y (Maybe.map (\_ -> Just 4)) row
 
-                newGrid =  
+                newGrid =
                     Dict.update x
-                    (\_ -> Just newRow)
-                    grid
+                        (\_ -> Just newRow)
+                        grid
             in
             ( { model | grid = newGrid }, Cmd.none )
 
@@ -137,12 +142,17 @@ renderRow row =
         |> tr
             []
 
-renderCell: Maybe Int -> String
+
+renderCell : Maybe Int -> String
 renderCell a =
-            case a of
-                Nothing -> ""
-                Just a ->   
-                    a |> toString
+    case a of
+        Nothing ->
+            ""
+
+        Just a ->
+            a |> toString
+
+
 
 ---- PROGRAM ----
 
