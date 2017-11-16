@@ -16,13 +16,17 @@ type alias Model =
 
 initModel : Model
 initModel =
-    { grid = Dict.empty
+    { grid = generateGrid --Dict.empty
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( initModel, Cmd.batch [ Random.generate InitializeBoard (pair (int 0 3) (int 0 3)) ] )
+    ( initModel, Cmd.batch [ 
+        Random.generate PickRandomTile (pair (int 0 3) (int 0 3)) 
+        , Random.generate PickRandomTile (pair (int 0 3) (int 0 3)) 
+    ] 
+    )
 
 
 
@@ -31,9 +35,9 @@ init =
 
 type Msg
     = NoOp
-    | GenerateGrid
     | Roll
-    | InitializeBoard ( Int, Int )
+    | PickRandomTile ( Int, Int )
+    | SetRandomValue (Int, Int) Int
 
 
 generateGrid : Dict Int (Dict Int (Maybe Int))
@@ -42,7 +46,7 @@ generateGrid =
         |> Dict.insert 0
             (Dict.empty
                 |> Dict.insert 0 Nothing
-                |> Dict.insert 1 Nothing
+                |> Dict.insert 1 (Just 2)
                 |> Dict.insert 2 Nothing
                 |> Dict.insert 3 Nothing
             )
@@ -72,19 +76,16 @@ generateGrid =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GenerateGrid ->
-            ( { model | grid = generateGrid }, Cmd.none )
-
         Roll ->
             ( model, Cmd.none )
 
-        InitializeBoard pair ->
+        PickRandomTile pair ->
             let
                 ( x, y ) =
-                    pair
+                    pair |> Debug.log "pair"
 
                 grid =
-                    generateGrid
+                    model.grid
 
                 row =
                     Dict.get x grid
@@ -100,6 +101,27 @@ update msg model =
             in
             ( { model | grid = newGrid }, Cmd.none )
 
+        SetRandomValue pair val ->
+            let
+                ( x, y ) =
+                    pair |> Debug.log "pair"
+
+                grid =
+                    model.grid
+
+                row =
+                    Dict.get x grid
+                        |> Maybe.withDefault Dict.empty
+
+                newRow =
+                    Dict.update y (Maybe.map (\_ -> Just 4)) row
+
+                newGrid =
+                    Dict.update x
+                        (\_ -> Just newRow)
+                        grid
+            in
+            ( model, Cmd.none)
         _ ->
             ( model, Cmd.none )
 
