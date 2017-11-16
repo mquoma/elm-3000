@@ -3,7 +3,9 @@ module Main exposing (..)
 import Dict exposing (..)
 import Html exposing (Html, div, h1, img, table, td, text, tr)
 import Html.Attributes exposing (src)
+import Html.Events exposing (..)
 import Random exposing (..)
+import Task exposing (..)
 
 
 ---- MODEL ----
@@ -37,6 +39,7 @@ type Msg
     = NoOp
     | Roll
     | PickRandomTile ( Int, Int )
+    | GetRandomValue (Int, Int) 
     | SetRandomValue (Int, Int) Int
 
 
@@ -46,7 +49,7 @@ generateGrid =
         |> Dict.insert 0
             (Dict.empty
                 |> Dict.insert 0 Nothing
-                |> Dict.insert 1 (Just 2)
+                |> Dict.insert 1 Nothing
                 |> Dict.insert 2 Nothing
                 |> Dict.insert 3 Nothing
             )
@@ -77,34 +80,23 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Roll ->
-            ( model, Cmd.none )
+            ( model, (Random.generate PickRandomTile (pair (int 0 3) (int 0 3))) )
 
         PickRandomTile pair ->
             let
                 ( x, y ) =
-                    pair |> Debug.log "pair"
-
-                grid =
-                    model.grid
-
-                row =
-                    Dict.get x grid
-                        |> Maybe.withDefault Dict.empty
-
-                newRow =
-                    Dict.update y (Maybe.map (\_ -> Just 4)) row
-
-                newGrid =
-                    Dict.update x
-                        (\_ -> Just newRow)
-                        grid
+                    pair 
             in
-            ( { model | grid = newGrid }, Cmd.none )
+            ( model, Task.perform (always (GetRandomValue (pair))) (Task.succeed ()))
+
+        GetRandomValue pair  ->
+
+            ( model, Random.generate (SetRandomValue pair) (int 1 2) )
 
         SetRandomValue pair val ->
             let
                 ( x, y ) =
-                    pair |> Debug.log "pair"
+                    pair 
 
                 grid =
                     model.grid
@@ -114,14 +106,14 @@ update msg model =
                         |> Maybe.withDefault Dict.empty
 
                 newRow =
-                    Dict.update y (Maybe.map (\_ -> Just 4)) row
+                    Dict.update y (Maybe.map (\_ -> Just (val * 2))) row
 
                 newGrid =
                     Dict.update x
                         (\_ -> Just newRow)
                         grid
             in
-            ( model, Cmd.none)
+            ( { model | grid = newGrid }, Cmd.none)
         _ ->
             ( model, Cmd.none )
 
@@ -135,7 +127,12 @@ view model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App sucks!" ]
-        , renderGrid model
+        , Html.button [
+            onClick Roll
+        ] [text "go"]
+        , div [] [
+        renderGrid model
+            ] 
         ]
 
 
